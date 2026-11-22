@@ -26,7 +26,7 @@ h1{font-size:26px}h2{font-size:19px;margin:14px 0 6px}
 .mc{display:flex;gap:12px;flex-wrap:wrap;background:#fff;border-radius:16px;padding:10px;margin:10px 0}.pv{width:140px;height:140px;border-radius:16px;background:var(--y) center/cover;display:grid;place-items:center;font-size:60px;flex:none}.mf{flex:1;min-width:190px}.mf input:not([type=file]){width:100%;margin:3px 0;padding:9px;border:1px solid #ddd;border-radius:8px;font:inherit}
 .ct{cursor:pointer;min-height:170px}.ct .im{width:104px;height:104px;font-size:54px;top:-46px}.mf select{width:100%;margin:3px 0;padding:9px;border:1px solid #ddd;border-radius:8px;font:inherit;background:#fff}
 .bb{position:sticky;top:8px;z-index:6;display:block;width:calc(100% - 32px);margin:14px 16px 0;font-size:16px;padding:14px;background:#111;color:var(--y);box-shadow:0 4px 14px #0003}
-.lo{position:absolute;right:14px;top:16px;background:#fff8;border-radius:12px;padding:4px 12px;font-size:12px;cursor:pointer}
+.lo{position:absolute;right:14px;top:14px;background:#111;color:var(--y);border-radius:14px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;z-index:2}.hd h1{padding-right:104px}
 .sr{display:block;width:100%;margin:8px 0;padding:12px 16px;border:0;border-radius:16px;background:var(--y);font:inherit;font-size:16px}
 .g{display:grid;gap:14px;padding:16px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .cd{background:var(--o);border-radius:18px;padding:56px 12px 14px;margin-top:44px;position:relative;min-height:150px}
@@ -81,14 +81,14 @@ function fc(){if(!C.cats)C.cats=[...new Set(C.menu.map(m=>m.c).filter(Boolean))]
 function ld(){O=ls('o')||{};C=ls('c')||DEF;if(!C.pins)C.pins=DEF.pins;fc();chk();render()}
 // ===== UI =====
 const RV={c:['c','l'],o:['o'],k:['k'],a:['k','c','o','l','s']},RN={c:'Kasyer',o:'Ambil Order',k:'Dapur',a:'Owner (lihat semua)'},RI={c:'💵',o:'🛒',k:'👨‍🍳',a:'👑'};
-const hd=(t,b,n)=>`<div class=hd>${n?'':'<a class=lo onclick="lo()">Keluar</a>'}${b?`<button class=bk onclick="bk()">←</button>`:''}<h1>${esc(C.shop)}</h1><small>${esc(t)}</small>${b?`<input class=sr placeholder="Nak makan apa?" value="${esc(S.q)}" oninput="S.q=this.value;mg()">`:''}</div>`;
+const hd=(t,b,n)=>`<div class=hd>${n?'':'<a class=lo onclick="lo()">🔒 Keluar</a>'}<h1>${esc(C.shop)}</h1><small>${esc(t)}</small>${b?`<input class=sr placeholder="Nak makan apa?" value="${esc(S.q)}" oninput="S.q=this.value;mg()">`:''}</div>`;
 const tb=(l,c)=>{const o=act(l);return`<button class="tb ${o?st(o):''}" onclick="${c||`pk('${l}')`}">${l}${o?'<br><small>'+rm(tot(o))+'</small>':''}</button>`};
 const nav=()=>`<nav>${[['k','👨‍🍳','Dapur'],['c','💵','Kasyer'],['o','🏠',''],['l','📊','Laporan'],['s','⚙️','Setting']].filter(a=>RV[localStorage.fbrole].includes(a[0])).map(([v,i,t])=>`<a class="${v==S.v?'on':''} ${v=='o'?'hm':''}" onclick="S.v='${v}';S.sh=0;render(1)">${i}${t?`<small>${t}</small>`:''}</a>`).join('')}</nav>`;
 function render(f){if(!f&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;const A=$('#app');
 const R=localStorage.fbrole;if(!(R&&RV[R]&&C.pins[R]===localStorage.fbok)){A.innerHTML=hd(S.lr?'PIN '+RN[S.lr]:'Pilih peranan',0,1)+(S.lr?`<div class=bl style="text-align:center"><input class=sr id=pin type=password inputmode=numeric maxlength=4 oninput="lg(this.value)" style="text-align:center;font-size:30px;max-width:220px;margin:20px auto"><button class=bt onclick="S.lr=0;render(1)">← Tukar peranan</button></div>`:`<div class=g style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${Object.keys(RN).map(r=>`<button class=tb style="min-height:120px;font-size:16px" onclick="S.lr='${r}';render(1)"><span style="font-size:38px">${RI[r]}</span><br>${RN[r]}</button>`).join('')}</div>`);return}
 if(!RV[R].includes(S.v))S.v=RV[R][0];
 A.innerHTML=({o:vo,k:vk,c:vc,l:vl,s:vs}[S.v])()+nav()+(S.sh?sheet():'')+(S.imp?impUI():'')+(S.cash?cashUI():'');if(S.v=='o'&&S.t)mg();if(S.cash)bkc()}
-function lo(){localStorage.fbrole='';S.lr=0;S.t=null;S.cart=[];S.sh=0;render(1)}
+function lo(){localStorage.fbrole='';localStorage.fbok='';S.lr=0;S.t=null;S.cart=[];S.sh=0;S.cash=null;S.imp=null;S.sel=null;S.q='';S.cat=null;render(1)}
 function lg(v){if(v.length==4){try{AC=AC||new AudioContext()}catch(e){}if(v===C.pins[S.lr]){localStorage.fbrole=S.lr;localStorage.fbok=v;S.v=RV[S.lr][0];S.lr=0;render(1)}else{tst('PIN salah');$('#pin').value=''}}}
 // --- Ambil order
 function vo(){if(!S.t){const bk=Object.values(O).filter(o=>o.l[0]=='B'&&!o.a).map(o=>o.l);
