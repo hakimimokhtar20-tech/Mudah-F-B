@@ -2,6 +2,14 @@
 <html lang="ms"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Order Kedai</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F9A800">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Order Kedai">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -167,6 +175,7 @@ function impUI(){return`<div class=sh style="z-index:30"><h2>Semak menu (${S.imp
 function cvt(){S.imp.forEach(m=>m.p=+(Math.round(m.o*S.fx.r/.05)*.05).toFixed(2))}
 function mx(){const v=+$('#mx').value;if(v>0){S.fx.r=v;cvt();render(1)}}
 function ok(r){const n=S.imp.filter(m=>m.n&&m.p>=0).map(m=>({id:uid(),n:m.n,p:m.p,e:m.e,c:m.c}));C.menu=r?n:C.menu.concat(n);n.forEach(m=>{if(m.c&&!C.cats.some(c=>c.n==m.c))C.cats.push({n:m.c,e:m.e||'🍽️'})});S.imp=null;sc();render(1);tst(n.length+' item masuk menu')}
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 addEventListener('paste',e=>{const F=[...(e.clipboardData?.files||[])].filter(x=>x.type.startsWith('image/'));if(F.length&&S.v=='s'&&localStorage.fbrole=='a')imp(F)});
 if(fs){fs.collection('orders').onSnapshot(s=>{O={};s.forEach(d=>O[d.id]=d.data());chk();render()});fs.doc('cfg/main').onSnapshot(d=>{if(d.exists)C=d.data();else sc();if(!C.pins)C.pins=DEF.pins;fc();render()});render(1)}else{ld();addEventListener('storage',ld)}
 </script></body></html>
