@@ -87,7 +87,7 @@ const nav=()=>`<nav>${[['k','👨‍🍳','Dapur'],['c','💵','Kasyer'],['o','�
 function render(f){if(!f&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;const A=$('#app');
 const R=localStorage.fbrole;if(!(R&&RV[R]&&C.pins[R]===localStorage.fbok)){A.innerHTML=hd(S.lr?'PIN '+RN[S.lr]:'Pilih peranan',0,1)+(S.lr?`<div class=bl style="text-align:center"><input class=sr id=pin type=password inputmode=numeric maxlength=4 oninput="lg(this.value)" style="text-align:center;font-size:30px;max-width:220px;margin:20px auto"><button class=bt onclick="S.lr=0;render(1)">← Tukar peranan</button></div>`:`<div class=g style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${Object.keys(RN).map(r=>`<button class=tb style="min-height:120px;font-size:16px" onclick="S.lr='${r}';render(1)"><span style="font-size:38px">${RI[r]}</span><br>${RN[r]}</button>`).join('')}</div>`);return}
 if(!RV[R].includes(S.v))S.v=RV[R][0];
-A.innerHTML=({o:vo,k:vk,c:vc,l:vl,s:vs}[S.v])()+nav()+(S.sh?sheet():'')+(S.imp?impUI():'');if(S.v=='o'&&S.t)mg()}
+A.innerHTML=({o:vo,k:vk,c:vc,l:vl,s:vs}[S.v])()+nav()+(S.sh?sheet():'')+(S.imp?impUI():'')+(S.cash?cashUI():'');if(S.v=='o'&&S.t)mg();if(S.cash)bkc()}
 function lo(){localStorage.fbrole='';S.lr=0;S.t=null;S.cart=[];S.sh=0;render(1)}
 function lg(v){if(v.length==4){try{AC=AC||new AudioContext()}catch(e){}if(v===C.pins[S.lr]){localStorage.fbrole=S.lr;localStorage.fbok=v;S.v=RV[S.lr][0];S.lr=0;render(1)}else{tst('PIN salah');$('#pin').value=''}}}
 // --- Ambil order
@@ -120,11 +120,18 @@ function sp(id,i){const o=O[id];o.r[i].d=1;sv(o)}
 function vc(){const ids=[...Array(C.tables)].map((_,i)=>'Meja '+(i+1)).concat(Object.values(O).filter(o=>o.l[0]=='B'&&!o.a).map(o=>o.l)),o=S.sel&&act(S.sel);
 return hd('Kasyer')+`<div class=sp><div class=g style="grid-template-columns:repeat(auto-fill,minmax(92px,1fr))">${ids.map(l=>tb(l,`sl('${l}')`)).join('')}</div><div class=bl>${o?bill(o):'<p>Tap meja untuk lihat bil.<br>⬜ kosong · 🟧 ada order · 🟩 siap · 🟦 dah bayar</p>'}</div></div>`}
 function sl(l){S.sel=l;render(1)}
-function bill(o){return`<h2>${o.l}</h2>${o.r.map((r,i)=>r.i.map((x,j)=>`<div class=ln>${i?'+ ':''}${x.q}× ${esc(x.n)} <span>${rm(x.p*x.q)} ${o.p?'':`<a class=ch onclick="di('${o.id}',${i},${j})">✕</a>`}</span>${x.nt?`<em>📝 ${esc(x.nt)}</em>`:''}</div>`).join('')).join('')}<h2>Jumlah ${rm(tot(o))}</h2>${o.p?`<p>✓ Dibayar (${o.p.m})</p><button class="bt o" onclick="ar('${o.id}')">Kosongkan meja</button>`:`<button class="bt g" onclick="py('${o.id}','QR')">Bayar QR</button><button class="bt g" onclick="py('${o.id}','Tunai')">Bayar Tunai</button>`}<button class="bt x" onclick="dO('${o.id}')">Padam order</button>`}
+function bill(o){return`<h2>${o.l}</h2>${o.r.map((r,i)=>r.i.map((x,j)=>`<div class=ln>${i?'+ ':''}${x.q}× ${esc(x.n)} <span>${rm(x.p*x.q)} ${o.p?'':`<a class=ch onclick="di('${o.id}',${i},${j})">✕</a>`}</span>${x.nt?`<em>📝 ${esc(x.nt)}</em>`:''}</div>`).join('')).join('')}<h2>Jumlah ${rm(tot(o))}</h2>${o.p?`<p>✓ Dibayar (${o.p.m})</p><button class="bt o" onclick="ar('${o.id}')">Kosongkan meja</button>`:`<button class="bt g" onclick="py('${o.id}','QR')">Bayar QR</button><button class="bt g" onclick="cs('${o.id}')">Bayar Tunai</button>`}<button class="bt x" onclick="dO('${o.id}')">Padam order</button>`}
 function di(id,i,j){const o=O[id];o.r[i].i.splice(j,1);if(!o.r[i].i.length)o.r.splice(i,1);o.r.length?sv(o):dl(id)}
 function py(id,m){const o=O[id];o.p={m,ts:Date.now()};sv(o)}
 function ar(id){const o=O[id];o.a=1;S.sel=null;sv(o)}
 function dO(id){if(confirm('Padam order ini?')){S.sel=null;dl(id)}}
+// --- Kalkulator bayaran tunai
+function cs(id){S.cash={id,r:0};render(1)}
+function cashUI(){const o=O[S.cash.id];if(!o){S.cash=null;return''}const T=tot(o);return`<div class=sh style="z-index:30;text-align:center"><h2>${o.l} · Tunai</h2><p>Jumlah bil</p><div style="font:36px 'Alfa Slab One',Georgia,serif">${rm(T)}</div><button class="bt g" style="width:100%;font-size:18px;padding:16px" onclick="cp(${T})">Duit Pas ${rm(T)}</button><div style="margin:6px 0">${[5,10,20,50,100].map(n=>`<button class="bt o" onclick="cp(${n})">RM${n}</button>`).join('')}</div><input id=cr class=sr type=number inputmode=decimal step=any placeholder="Atau taip jumlah diterima" value="${S.cash.r||''}" oninput="S.cash.r=+this.value;bkc()"><div id=cb2></div><button class=bt onclick="S.cash=null;render(1)">Batal</button><button id=cok class="bt g" onclick="cok()">Sahkan bayaran</button></div>`}
+function bkc(){const o=O[S.cash.id],e=$('#cb2');if(!o||!e)return;const t=Math.round(tot(o)*100),r=Math.round((S.cash.r||0)*100),d=(r-t)/100;
+e.innerHTML=!r?'<p>Masukkan duit yang diterima</p>':r>=t?`<p>Baki dipulangkan</p><div style="font:48px 'Alfa Slab One',Georgia,serif;color:#16a34a">${rm(d)}</div>`:`<p style="color:#dc2626;font-weight:600;font-size:18px">Kurang ${rm(-d)}</p>`;$('#cok').disabled=!r||r<t}
+function cp(n){S.cash.r=n;render(1)}
+function cok(){const o=O[S.cash.id];if(!o)return;const t=Math.round(tot(o)*100),r=Math.round((S.cash.r||0)*100);if(!r||r<t)return;S.cash=null;py(o.id,'Tunai');tst('Dibayar · Baki '+rm((r-t)/100))}
 // --- Laporan + tutup kedai
 function vl(){const P=Object.values(O).filter(o=>o.p&&dt(o.p.ts)==S.d),sm=P.reduce((s,o)=>s+tot(o),0),q=P.filter(o=>o.p.m=='QR').reduce((s,o)=>s+tot(o),0),t=sm-q,it={},cl=C.close[S.d]||{},mo=S.d.slice(0,7),dy={};
 P.forEach(o=>o.r.forEach(r=>r.i.forEach(x=>it[x.n]=(it[x.n]||0)+x.q)));
