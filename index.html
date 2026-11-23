@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
 :root{--o:#F9A800;--y:#FFD98A}
 *{box-sizing:border-box;margin:0}
@@ -63,6 +64,7 @@ const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,
 ls=(k,v)=>v===undefined?JSON.parse(localStorage.getItem('fb'+k)||'null'):localStorage.setItem('fb'+k,JSON.stringify(v)),
 dt=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')},
 tm=t=>new Date(t).toTimeString().slice(0,5),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const VER='1.1.0';
 const DEF={shop:'Kedai Aku',cats:[{n:'Makanan',e:'🍛'},{n:'Minuman',e:'🥤'}],pins:{c:'3333',o:'1111',k:'2222',a:'1234'},tables:10,float:0,close:{},menu:[
 {id:'a',c:'Makanan',n:'Nasi Lemak',p:6,e:'🍛'},{id:'b',c:'Makanan',n:'Mee Goreng',p:7,e:'🍜'},{id:'c',c:'Makanan',n:'Ayam Goreng',p:8,e:'🍗'},{id:'d',c:'Minuman',n:'Teh Ais',p:3,e:'🧋'},{id:'e',c:'Minuman',n:'Milo Ais',p:4,e:'🥤'},{id:'f',c:'Makanan',n:'Roti Canai',p:2.5,e:'🫓'}]};
 let O={},C=DEF,pr=null,AC,S={v:'o',t:null,cart:[],q:'',sh:0,sel:null,d:dt(Date.now())},fs=null;
@@ -85,6 +87,8 @@ const hd=(t,b,n)=>`<div class=hd>${n?'':'<a class=lo onclick="lo()">🔒 Keluar<
 const tb=(l,c)=>{const o=act(l);return`<button class="tb ${o?st(o):''}" onclick="${c||`pk('${l}')`}">${l}${o?'<br><small>'+rm(tot(o))+'</small>':''}</button>`};
 const nav=()=>`<nav>${[['k','👨‍🍳','Dapur'],['c','💵','Kasyer'],['o','🏠',''],['l','📊','Laporan'],['s','⚙️','Setting']].filter(a=>RV[localStorage.fbrole].includes(a[0])).map(([v,i,t])=>`<a class="${v==S.v?'on':''} ${v=='o'?'hm':''}" onclick="S.v='${v}';S.sh=0;render(1)">${i}${t?`<small>${t}</small>`:''}</a>`).join('')}</nav>`;
 function render(f){if(!f&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;const A=$('#app');
+if(fs&&!AR){A.innerHTML=hd('Menyambung…',0,1);return}
+if(fs&&!AU){A.innerHTML=hd('Log masuk akaun kedai',0,1)+`<div class=bl style="max-width:420px;margin:auto"><p>Log masuk sekali sahaja pada telefon ni.</p><input id=ae class=sr type=email autocomplete=username placeholder="Emel kedai" value="${esc(localStorage.fbem||'')}"><input id=ap class=sr type=password autocomplete=current-password placeholder="Kata laluan" onkeydown="if(event.key=='Enter')sa()"><button class="bt o" style="width:100%" onclick="sa()">Log masuk</button></div>`;return}
 const R=localStorage.fbrole;if(!(R&&RV[R]&&C.pins[R]===localStorage.fbok)){A.innerHTML=hd(S.lr?'PIN '+RN[S.lr]:'Pilih peranan',0,1)+(S.lr?`<div class=bl style="text-align:center"><input class=sr id=pin type=password inputmode=numeric maxlength=4 oninput="lg(this.value)" style="text-align:center;font-size:30px;max-width:220px;margin:20px auto"><button class=bt onclick="S.lr=0;render(1)">← Tukar peranan</button></div>`:`<div class=g style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${Object.keys(RN).map(r=>`<button class=tb style="min-height:120px;font-size:16px" onclick="S.lr='${r}';render(1)"><span style="font-size:38px">${RI[r]}</span><br>${RN[r]}</button>`).join('')}</div>`);return}
 if(!RV[R].includes(S.v))S.v=RV[R][0];
 A.innerHTML=({o:vo,k:vk,c:vc,l:vl,s:vs}[S.v])()+nav()+(S.sh?sheet():'')+(S.imp?impUI():'')+(S.cash?cashUI():'');if(S.v=='o'&&S.t)mg();if(S.cash)bkc()}
@@ -144,7 +148,7 @@ function tk(){C.float=+$('#fl').value;const t=Object.values(O).filter(o=>o.p&&dt
 function vs(){return hd('Setting')+`<div class=bl><label>Nama kedai</label><input class=sr value="${esc(C.shop)}" onchange="cf('shop',this.value)"><label>Bilangan meja</label><input class=sr type=number value="${C.tables}" onchange="cf('tables',+this.value)"><h2>PIN (4 digit)</h2>${Object.keys(RN).map(r=>`<label>${RN[r]}</label><input class=sr value="${C.pins[r]}" maxlength=4 onchange="np('${r}',this.value)">`).join('')}
 <h2>Kategori</h2>${C.cats.map((c,i)=>`<div class=mc><div class=pv ${c.i?`style="background-image:url(${c.i})"`:''}>${c.i?'':c.e||'🍽️'}</div><div class=mf><label class="bt o" style="display:inline-block">⬆️ Upload<input type=file accept="image/*" hidden onchange="pic(${i},this.files[0],C.cats);this.value=''"></label>${c.i?`<button class="bt x" onclick="cu(${i},'i','')">🗑️ Delete</button>`:''}<input value="${esc(c.n)}" placeholder="Nama kategori" onchange="cn(${i},this.value)"><input value="${c.e||''}" placeholder="Emoji" style="width:70px" onchange="cu(${i},'e',this.value)"> <a class=ch onclick="cm(${i},-1)">⬆ Naik</a><a class=ch onclick="cm(${i},1)">⬇ Turun</a><a class=ch onclick="cd(${i})">Padam</a></div></div>`).join('')}<button class="bt o" onclick="C.cats.push({n:'Kategori baru',e:'🍽️'});sc();render(1)">+ Tambah kategori</button>
 <h2>Menu</h2><label class="bt o" style="display:inline-block">📷 Snap gambar menu<input type=file accept="image/*" capture=environment hidden onchange="imp(this.files);this.value=''"></label><label class="bt o" style="display:inline-block">🖼️ Pilih PDF / gambar / screenshot<input type=file multiple accept="application/pdf,image/*" hidden onchange="imp(this.files);this.value=''"></label><p><small>Boleh pilih banyak fail sekali. Di laptop, tampal screenshot terus dengan Ctrl+V.</small></p>${C.menu.map((m,i)=>`<div class=mc><div class=pv ${m.i?`style="background-image:url(${m.i})"`:''}>${m.i?'':m.e||'🍽️'}</div><div class=mf><label class="bt o" style="display:inline-block">⬆️ Upload<input type=file accept="image/*" hidden onchange="pic(${i},this.files[0]);this.value=''"></label>${m.i?`<button class="bt x" onclick="mu(${i},'i','')">🗑️ Delete</button>`:''}<input value="${esc(m.n)}" placeholder="Nama" onchange="mu(${i},'n',this.value)"><select onchange="mu(${i},'c',this.value)">${C.cats.some(c=>c.n==m.c)?'':'<option selected>Lain-lain</option>'}${C.cats.map(c=>`<option ${c.n==m.c?'selected':''}>${esc(c.n)}</option>`).join('')}</select><input type=number step=.1 value="${m.p}" placeholder="Harga RM" onchange="mu(${i},'p',+this.value)"><input value="${m.e||''}" placeholder="Emoji" style="width:70px" onchange="mu(${i},'e',this.value)"> <a class=ch onclick="mu(${i},'h',${m.h?0:1})">${m.h?'Habis':'Ada'}</a><a class=ch onclick="C.menu.splice(${i},1);sc();render(1)">Padam item</a></div></div>`).join('')}<button class="bt o" onclick="C.menu.push({id:uid(),n:'Menu baru',p:0,e:'🍽️'});sc();render(1)">+ Tambah menu</button>
-<h2>Reset</h2><button class="bt x" onclick="rs()">Padam SEMUA order</button></div>`}
+${fs?`<h2>Akaun kedai</h2><p>${esc(AU?AU.email:'')}</p><button class="bt x" onclick="ds()">Log keluar akaun kedai dari telefon ini</button>`:''}<h2>Reset</h2><button class="bt x" onclick="rs()">Padam SEMUA order</button><p><small>Versi app ${VER}</small></p></div>`}
 function cf(k,v){C[k]=v;sc();render(1)}
 async function pic(i,f,a){if(!f)return;try{const b=await createImageBitmap(f),s=Math.min(b.width,b.height),cv=document.createElement('canvas');cv.width=cv.height=200;cv.getContext('2d').drawImage(b,(b.width-s)/2,(b.height-s)/2,s,s,0,0,200,200);(a||C.menu)[i].i=cv.toDataURL('image/jpeg',.65);sc();render(1)}catch(e){tst('Gagal muat gambar')}}
 function cu(i,k,v){C.cats[i][k]=v;sc();render(1)}
@@ -184,5 +188,13 @@ function mx(){const v=+$('#mx').value;if(v>0){S.fx.r=v;cvt();render(1)}}
 function ok(r){const n=S.imp.filter(m=>m.n&&m.p>=0).map(m=>({id:uid(),n:m.n,p:m.p,e:m.e,c:m.c}));C.menu=r?n:C.menu.concat(n);n.forEach(m=>{if(m.c&&!C.cats.some(c=>c.n==m.c))C.cats.push({n:m.c,e:m.e||'🍽️'})});S.imp=null;sc();render(1);tst(n.length+' item masuk menu')}
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 addEventListener('paste',e=>{const F=[...(e.clipboardData?.files||[])].filter(x=>x.type.startsWith('image/'));if(F.length&&S.v=='s'&&localStorage.fbrole=='a')imp(F)});
-if(fs){fs.collection('orders').onSnapshot(s=>{O={};s.forEach(d=>O[d.id]=d.data());chk();render()});fs.doc('cfg/main').onSnapshot(d=>{if(d.exists)C=d.data();else sc();if(!C.pins)C.pins=DEF.pins;fc();render()});render(1)}else{ld();addEventListener('storage',ld)}
+let U1,U2,AU=null,AR=0;
+function lsn(){if(U1)return;const er=e=>tst('Sambungan gagal: '+(e.code=='permission-denied'?'tiada kebenaran':e.code));
+U1=fs.collection('orders').onSnapshot(s=>{O={};s.forEach(d=>O[d.id]=d.data());chk();render()},er);
+U2=fs.doc('cfg/main').onSnapshot(d=>{if(d.exists)C=d.data();else sc();if(!C.pins)C.pins=DEF.pins;fc();render()},er)}
+function stp(){if(U1)U1();if(U2)U2();U1=U2=null;O={};pr=null}
+function am(c){return/credential|password|user-not-found|invalid-email/.test(c)?'Emel atau kata laluan salah':/too-many/.test(c)?'Terlalu banyak cubaan, tunggu sebentar':/network/.test(c)?'Tiada internet':'Gagal log masuk'}
+function sa(){const e=$('#ae').value.trim(),p=$('#ap').value;if(!e||!p)return tst('Isi emel dan kata laluan');firebase.auth().signInWithEmailAndPassword(e,p).then(()=>{localStorage.fbem=e}).catch(x=>tst(am(x.code||'')))}
+function ds(){if(confirm('Log keluar akaun kedai dari telefon ini? Perlu emel dan kata laluan untuk masuk semula.')){localStorage.fbrole='';firebase.auth().signOut()}}
+if(fs){render(1);firebase.auth().onAuthStateChanged(u=>{AU=u;AR=1;u?lsn():stp();render(1)})}else{ld();addEventListener('storage',ld)}
 </script></body></html>
