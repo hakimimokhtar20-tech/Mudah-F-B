@@ -64,7 +64,7 @@ const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,
 ls=(k,v)=>v===undefined?JSON.parse(localStorage.getItem('fb'+k)||'null'):localStorage.setItem('fb'+k,JSON.stringify(v)),
 dt=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')},
 tm=t=>new Date(t).toTimeString().slice(0,5),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const VER='1.1.0';
+const VER='1.2.0';
 const DEF={shop:'Kedai Aku',cats:[{n:'Makanan',e:'🍛'},{n:'Minuman',e:'🥤'}],pins:{c:'3333',o:'1111',k:'2222',a:'1234'},tables:10,float:0,close:{},menu:[
 {id:'a',c:'Makanan',n:'Nasi Lemak',p:6,e:'🍛'},{id:'b',c:'Makanan',n:'Mee Goreng',p:7,e:'🍜'},{id:'c',c:'Makanan',n:'Ayam Goreng',p:8,e:'🍗'},{id:'d',c:'Minuman',n:'Teh Ais',p:3,e:'🧋'},{id:'e',c:'Minuman',n:'Milo Ais',p:4,e:'🥤'},{id:'f',c:'Makanan',n:'Roti Canai',p:2.5,e:'🫓'}]};
 let O={},C=DEF,pr=null,AC,S={v:'o',t:null,cart:[],q:'',sh:0,sel:null,d:dt(Date.now())},fs=null;
@@ -91,8 +91,8 @@ if(fs&&!AR){A.innerHTML=hd('Menyambung…',0,1);return}
 if(fs&&!AU){A.innerHTML=hd('Log masuk akaun kedai',0,1)+`<div class=bl style="max-width:420px;margin:auto"><p>Log masuk sekali sahaja pada telefon ni.</p><input id=ae class=sr type=email autocomplete=username placeholder="Emel kedai" value="${esc(localStorage.fbem||'')}"><input id=ap class=sr type=password autocomplete=current-password placeholder="Kata laluan" onkeydown="if(event.key=='Enter')sa()"><button class="bt o" style="width:100%" onclick="sa()">Log masuk</button></div>`;return}
 const R=localStorage.fbrole;if(!(R&&RV[R]&&C.pins[R]===localStorage.fbok)){A.innerHTML=hd(S.lr?'PIN '+RN[S.lr]:'Pilih peranan',0,1)+(S.lr?`<div class=bl style="text-align:center"><input class=sr id=pin type=password inputmode=numeric maxlength=4 oninput="lg(this.value)" style="text-align:center;font-size:30px;max-width:220px;margin:20px auto"><button class=bt onclick="S.lr=0;render(1)">← Tukar peranan</button></div>`:`<div class=g style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${Object.keys(RN).map(r=>`<button class=tb style="min-height:120px;font-size:16px" onclick="S.lr='${r}';render(1)"><span style="font-size:38px">${RI[r]}</span><br>${RN[r]}</button>`).join('')}</div>`);return}
 if(!RV[R].includes(S.v))S.v=RV[R][0];
-A.innerHTML=({o:vo,k:vk,c:vc,l:vl,s:vs}[S.v])()+nav()+(S.sh?sheet():'')+(S.imp?impUI():'')+(S.cash?cashUI():'');if(S.v=='o'&&S.t)mg();if(S.cash)bkc()}
-function lo(){localStorage.fbrole='';localStorage.fbok='';S.lr=0;S.t=null;S.cart=[];S.sh=0;S.cash=null;S.imp=null;S.sel=null;S.q='';S.cat=null;render(1)}
+A.innerHTML=(R=='a'&&PM&&!fin(PM)?bn():'')+({o:vo,k:vk,c:vc,l:vl,s:vs}[S.v])()+nav()+(S.sh?sheet():'')+(S.imp?impUI():'')+(S.cash?cashUI():'');if(S.v=='o'&&S.t)mg();if(S.cash)bkc();if(R=='a'){chko();if(S.v=='l')ldm(S.d.slice(0,7)).catch(()=>{})}}
+function lo(){localStorage.fbrole='';localStorage.fbok='';S.lr=0;S.t=null;S.cart=[];S.sh=0;S.cash=null;S.imp=null;S.sel=null;S.q='';S.cat=null;OC=0;PM=null;render(1)}
 function lg(v){if(v.length==4){try{AC=AC||new AudioContext()}catch(e){}if(v===C.pins[S.lr]){localStorage.fbrole=S.lr;localStorage.fbok=v;S.v=RV[S.lr][0];S.lr=0;render(1)}else{tst('PIN salah');$('#pin').value=''}}}
 // --- Ambil order
 function vo(){if(!S.t){const bk=Object.values(O).filter(o=>o.l[0]=='B'&&!o.a).map(o=>o.l);
@@ -137,13 +137,39 @@ e.innerHTML=!r?'<p>Masukkan duit yang diterima</p>':r>=t?`<p>Baki dipulangkan</p
 function cp(n){S.cash.r=n;render(1)}
 function cok(){const o=O[S.cash.id];if(!o)return;const t=Math.round(tot(o)*100),r=Math.round((S.cash.r||0)*100);if(!r||r<t)return;S.cash=null;py(o.id,'Tunai');tst('Dibayar · Baki '+rm((r-t)/100))}
 // --- Laporan + tutup kedai
-function vl(){const P=Object.values(O).filter(o=>o.p&&dt(o.p.ts)==S.d),sm=P.reduce((s,o)=>s+tot(o),0),q=P.filter(o=>o.p.m=='QR').reduce((s,o)=>s+tot(o),0),t=sm-q,it={},cl=C.close[S.d]||{},mo=S.d.slice(0,7),dy={};
+// --- Simpan data 24 jam untuk staf; Owner: penyata PDF bulanan, lepas itu padam
+const AO=()=>Object.values({...M,...O}),mk=t=>dt(t).slice(0,7),bl=m=>MN[+m.slice(5)-1]+' '+m.slice(0,4),
+mr=m=>{const[y,n]=m.split('-').map(Number);return[new Date(y,n-1,1).getTime(),new Date(y,n,1).getTime()]},
+fin=m=>!!(C.pdf&&C.pdf[m]>=mr(m)[1]);
+const bn=()=>`<div style="background:#e5484d;color:#fff;padding:14px;font-weight:600;text-align:center">⚠️ Penyata ${bl(PM)} belum dimuat turun.<br><small>Muat turun PDF dulu. Selepas itu data bulan tu dipadam automatik bila Owner log masuk seterusnya.</small><br><button class=bt onclick="pdf('${PM}')">📄 Muat turun penyata sekarang</button></div>`;
+function ldm(m){if(!fs)return Promise.resolve();if(MP[m])return MP[m];return MP[m]=(async()=>{try{const[a,b]=mr(m),s=await fs.collection('orders').where('ts','>=',a).where('ts','<',b).get();s.forEach(d=>M[d.id]=d.data());MD[m]=1;render(1)}catch(e){delete MP[m];tst('Gagal muat data bulan');throw e}})()}
+function rl(m){MD[m]=0;delete MP[m];Object.keys(M).forEach(k=>{if(mk(M[k].ts)==m)delete M[k]});render(1)}
+async function chko(){if(OC)return;OC=1;try{let ts;
+if(fs){const s=await fs.collection('orders').orderBy('ts').limit(1).get();if(s.empty)return;ts=s.docs[0].data().ts}
+else{const a=Object.values(O).map(o=>o.ts).sort((x,y)=>x-y);if(!a.length)return;ts=a[0]}
+const m=mk(ts);if(m>=mk(Date.now()))return;PM=m;
+if(fin(m)){await purge(m);OC=0;PM=null;chko()}else render(1)}catch(e){OC=0;tst('Semakan data lama gagal')}}
+async function purge(m){const[a,b]=mr(m);let L;
+if(fs){const s=await fs.collection('orders').where('ts','>=',a).where('ts','<',b).get();L=s.docs.map(d=>d.data())}else L=Object.values(O).filter(o=>o.ts>=a&&o.ts<b);
+for(let i=0;i<L.length;i+=400){const c=L.slice(i,i+400);if(fs){const w=fs.batch();c.forEach(o=>w.delete(fs.collection('orders').doc(o.id)));await w.commit()}else c.forEach(o=>delete O[o.id])}
+if(!fs)ls('o',O);Object.keys(M).forEach(k=>{if(mk(M[k].ts)==m)delete M[k]});delete MP[m];MD[m]=0;delete O[''];if(C.pdf){delete C.pdf[m];sc()}tst('Data '+bl(m)+' dipadam ('+L.length+' order)');render(1)}
+async function pdf(m){try{await ldm(m);await lsrc(JP);const AL=AO().filter(o=>mk(o.ts)==m),P=AL.filter(o=>o.p),dy={};
+P.forEach(o=>{const d=dt(o.ts),x=dy[d]=dy[d]||{n:0,q:0,t:0},v=tot(o);o.p.m=='QR'?x.q+=v:x.t+=v;x.n++});
+const D=Object.keys(dy).sort(),sm=P.reduce((s,o)=>s+tot(o),0),q=P.filter(o=>o.p.m=='QR').reduce((s,o)=>s+tot(o),0),d=new window.jspdf.jsPDF();let y=20;
+d.setFontSize(18);d.text('Penyata Bulanan',14,y);y+=8;d.setFontSize(12);d.text(C.shop+' · '+bl(m),14,y);y+=12;
+d.setFontSize(11);[['Jumlah jualan',rm(sm)],['Bilangan bil',String(P.length)],['Bayaran QR',rm(q)],['Bayaran tunai',rm(sm-q)],['Order tak dibayar',String(AL.length-P.length)]].forEach(([a,b])=>{d.text(a,14,y);d.text(b,90,y);y+=7});
+y+=6;d.setFont(undefined,'bold');const row=(a,b,c,e,g)=>{d.text(a,14,y);d.text(b,80,y,{align:'right'});d.text(c,120,y,{align:'right'});d.text(e,160,y,{align:'right'});d.text(g,196,y,{align:'right'});y+=7};
+row('Tarikh','Bil','QR','Tunai','Jumlah');d.setFont(undefined,'normal');
+D.forEach(k=>{if(y>275){d.addPage();y=20}const x=dy[k];row(k,String(x.n),rm(x.q),rm(x.t),rm(x.q+x.t))});
+d.setFont(undefined,'bold');row('Jumlah',String(P.length),rm(q),rm(sm-q),rm(sm));d.save('penyata-'+m+'.pdf');
+C.pdf=C.pdf||{};C.pdf[m]=Date.now();sc();render(1);tst(fin(m)?'PDF dimuat turun. Data bulan ini dipadam automatik bila Owner log masuk seterusnya':'PDF dimuat turun (bulan belum tamat, data belum dipadam)')}catch(e){tst('Gagal jana PDF. Pastikan ada internet')}}
+function vl(){const own=localStorage.fbrole=='a';if(!own)S.d=dt(Date.now());const AL=AO(),P=AL.filter(o=>o.p&&dt(o.ts)==S.d),sm=P.reduce((s,o)=>s+tot(o),0),q=P.filter(o=>o.p.m=='QR').reduce((s,o)=>s+tot(o),0),t=sm-q,it={},cl=C.close[S.d]||{},mo=S.d.slice(0,7),dy={};
 P.forEach(o=>o.r.forEach(r=>r.i.forEach(x=>it[x.n]=(it[x.n]||0)+x.q)));
-Object.values(O).filter(o=>o.p&&dt(o.p.ts).slice(0,7)==mo).forEach(o=>{const d=dt(o.p.ts);dy[d]=(dy[d]||0)+tot(o)});
-return hd('Laporan')+`<div class=bl><input type=date class=sr value="${S.d}" onchange="S.d=this.value;render(1)"><h2>${P.length} bil · ${rm(sm)}</h2><p>QR ${rm(q)} · Tunai ${rm(t)}</p>${Object.entries(it).map(([k,v])=>`<div class=ln>${esc(k)}<span>${v}</span></div>`).join('')}
+if(own)AL.filter(o=>o.p&&mk(o.ts)==mo).forEach(o=>{const d=dt(o.ts);dy[d]=(dy[d]||0)+tot(o)});
+return hd('Laporan')+`<div class=bl>${own?`<input type=date class=sr value="${S.d}" onchange="S.d=this.value;render(1)">`:'<p>Laporan hari ini</p>'}<h2>${P.length} bil · ${rm(sm)}</h2><p>QR ${rm(q)} · Tunai ${rm(t)}</p>${Object.entries(it).map(([k,v])=>`<div class=ln>${esc(k)}<span>${v}</span></div>`).join('')}
 <h2>Tutup kedai</h2><label>Modal laci</label><input class=sr type=number id=fl value="${C.float||0}"><label>Tunai dalam laci (kira)</label><input class=sr type=number id=cn value="${cl.c==null?'':cl.c}"><p>Jangkaan ${rm((+C.float||0)+t)}${cl.c!=null?` · ${cl.c>=cl.e?'Lebih':'Kurang'} ${rm(Math.abs(cl.c-cl.e))}`:''}</p><button class="bt o" onclick="tk()">Simpan tutup kedai</button>
-<h2>Bulan ${mo}</h2>${Object.keys(dy).sort().map(d=>`<div class=ln>${d}<span>${rm(dy[d])}</span></div>`).join('')}<div class=ln><b>Jumlah bulan</b><span>${rm(Object.values(dy).reduce((a,b)=>a+b,0))}</span></div></div>`}
-function tk(){C.float=+$('#fl').value;const t=Object.values(O).filter(o=>o.p&&dt(o.p.ts)==S.d&&o.p.m=='Tunai').reduce((s,o)=>s+tot(o),0);C.close[S.d]={c:+$('#cn').value,e:C.float+t};sc();render(1);tst('Disimpan ✓')}
+${own?`<h2>Bulan ${bl(mo)}</h2>${fs&&!MD[mo]?'<p>Memuat data bulan…</p>':''}${Object.keys(dy).sort().map(d=>`<div class=ln>${d}<span>${rm(dy[d])}</span></div>`).join('')}<div class=ln><b>Jumlah bulan</b><span>${rm(Object.values(dy).reduce((a,b)=>a+b,0))}</span></div><button class="bt o" onclick="pdf('${mo}')">📄 Muat turun penyata ${bl(mo)}</button><button class=bt onclick="rl('${mo}')">↻ Muat semula</button><p><small>Setiap order dikira pada tarikh ia dibuat. Penyata lengkap mesti dimuat turun selepas bulan tamat supaya data dipadam automatik.</small></p>`:''}</div>`}
+function tk(){C.float=+$('#fl').value;const t=AO().filter(o=>o.p&&dt(o.ts)==S.d&&o.p.m=='Tunai').reduce((s,o)=>s+tot(o),0);C.close[S.d]={c:+$('#cn').value,e:C.float+t};sc();render(1);tst('Disimpan ✓')}
 // --- Setting
 function vs(){return hd('Setting')+`<div class=bl><label>Nama kedai</label><input class=sr value="${esc(C.shop)}" onchange="cf('shop',this.value)"><label>Bilangan meja</label><input class=sr type=number value="${C.tables}" onchange="cf('tables',+this.value)"><h2>PIN (4 digit)</h2>${Object.keys(RN).map(r=>`<label>${RN[r]}</label><input class=sr value="${C.pins[r]}" maxlength=4 onchange="np('${r}',this.value)">`).join('')}
 <h2>Kategori</h2>${C.cats.map((c,i)=>`<div class=mc><div class=pv ${c.i?`style="background-image:url(${c.i})"`:''}>${c.i?'':c.e||'🍽️'}</div><div class=mf><label class="bt o" style="display:inline-block">⬆️ Upload<input type=file accept="image/*" hidden onchange="pic(${i},this.files[0],C.cats);this.value=''"></label>${c.i?`<button class="bt x" onclick="cu(${i},'i','')">🗑️ Delete</button>`:''}<input value="${esc(c.n)}" placeholder="Nama kategori" onchange="cn(${i},this.value)"><input value="${c.e||''}" placeholder="Emoji" style="width:70px" onchange="cu(${i},'e',this.value)"> <a class=ch onclick="cm(${i},-1)">⬆ Naik</a><a class=ch onclick="cm(${i},1)">⬇ Turun</a><a class=ch onclick="cd(${i})">Padam</a></div></div>`).join('')}<button class="bt o" onclick="C.cats.push({n:'Kategori baru',e:'🍽️'});sc();render(1)">+ Tambah kategori</button>
@@ -188,11 +214,12 @@ function mx(){const v=+$('#mx').value;if(v>0){S.fx.r=v;cvt();render(1)}}
 function ok(r){const n=S.imp.filter(m=>m.n&&m.p>=0).map(m=>({id:uid(),n:m.n,p:m.p,e:m.e,c:m.c}));C.menu=r?n:C.menu.concat(n);n.forEach(m=>{if(m.c&&!C.cats.some(c=>c.n==m.c))C.cats.push({n:m.c,e:m.e||'🍽️'})});S.imp=null;sc();render(1);tst(n.length+' item masuk menu')}
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 addEventListener('paste',e=>{const F=[...(e.clipboardData?.files||[])].filter(x=>x.type.startsWith('image/'));if(F.length&&S.v=='s'&&localStorage.fbrole=='a')imp(F)});
-let U1,U2,AU=null,AR=0;
+let U1,U2,AU=null,AR=0,PM=null,OC=0,M={},MP={},MD={};
+const MN=['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'],JP='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 function lsn(){if(U1)return;const er=e=>tst('Sambungan gagal: '+(e.code=='permission-denied'?'tiada kebenaran':e.code));
-U1=fs.collection('orders').onSnapshot(s=>{O={};s.forEach(d=>O[d.id]=d.data());chk();render()},er);
+U1=fs.collection('orders').where('ts','>=',Date.now()-864e5).onSnapshot(s=>{O={};s.forEach(d=>O[d.id]=d.data());chk();render()},er);
 U2=fs.doc('cfg/main').onSnapshot(d=>{if(d.exists)C=d.data();else sc();if(!C.pins)C.pins=DEF.pins;fc();render()},er)}
-function stp(){if(U1)U1();if(U2)U2();U1=U2=null;O={};pr=null}
+function stp(){if(U1)U1();if(U2)U2();U1=U2=null;O={};pr=null;M={};MP={};MD={};PM=null;OC=0}
 function am(c){return/credential|password|user-not-found|invalid-email/.test(c)?'Emel atau kata laluan salah':/too-many/.test(c)?'Terlalu banyak cubaan, tunggu sebentar':/network/.test(c)?'Tiada internet':'Gagal log masuk'}
 function sa(){const e=$('#ae').value.trim(),p=$('#ap').value;if(!e||!p)return tst('Isi emel dan kata laluan');firebase.auth().signInWithEmailAndPassword(e,p).then(()=>{localStorage.fbem=e}).catch(x=>tst(am(x.code||'')))}
 function ds(){if(confirm('Log keluar akaun kedai dari telefon ini? Perlu emel dan kata laluan untuk masuk semula.')){localStorage.fbrole='';firebase.auth().signOut()}}
